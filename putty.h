@@ -1247,6 +1247,8 @@ NORETURN void cleanup_exit(int);
     X(INT, NONE, close_on_exit) /* FORCE_ON, FORCE_OFF, AUTO */ \
     X(BOOL, NONE, warn_on_close) \
     X(INT, NONE, ping_interval) /* in seconds */ \
+    X(INT, NONE, restart_interval) /* in seconds */ \
+    X(BOOL, NONE, cache_pass) \
     X(BOOL, NONE, tcp_nodelay) \
     X(BOOL, NONE, tcp_keepalives) \
     X(STR, NONE, loghost) /* logical host being contacted, for host key check */ \
@@ -1958,6 +1960,7 @@ void cmdline_run_saved(Conf *);
 void cmdline_cleanup(void);
 int cmdline_get_passwd_input(prompts_t *p);
 bool cmdline_host_ok(Conf *);
+void cache_host_name_pass(const char *hostname, const char *username, char **ptr_pass);
 #define TOOLTYPE_FILETRANSFER 1
 #define TOOLTYPE_NONNETWORK 2
 #define TOOLTYPE_HOST_ARG 4

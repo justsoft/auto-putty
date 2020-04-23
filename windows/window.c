@@ -298,6 +298,26 @@ static HICON trust_icon = INVALID_HANDLE_VALUE;
 const bool share_can_be_downstream = true;
 const bool share_can_be_upstream = true;
 
+typedef int (__stdcall *fpMessageBoxTimeout_t)(IN HWND hWnd, 
+        IN LPCSTR lpText, IN LPCSTR lpCaption, 
+        IN UINT uType, IN WORD wLanguageId, IN DWORD dwMilliseconds);
+
+int MessageBoxTimeoutA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType, WORD wLanguageId, DWORD dwMilliseconds)
+{
+    static fpMessageBoxTimeout_t fpMessageBoxTimeout = NULL;
+
+    if (fpMessageBoxTimeout == NULL) {
+        HMODULE hUser32 = GetModuleHandleA("user32.dll");
+        if (hUser32) {
+            fpMessageBoxTimeout = (fpMessageBoxTimeout_t)GetProcAddress(hUser32, "MessageBoxTimeoutA");
+        }
+    }
+    return fpMessageBoxTimeout ? 
+        fpMessageBoxTimeout(hWnd, lpText, lpCaption, 
+              uType, wLanguageId, dwMilliseconds) :
+        MessageBox(hwnd, lpText, lpCaption, uType);
+}
+
 static bool is_utf8(void)
 {
     return ucsdata.line_codepage == CP_UTF8;
@@ -469,6 +489,12 @@ static void close_session(void *ignored_context)
         InsertMenu(popup_menus[i].menu, IDM_DUPSESS, MF_BYCOMMAND | MF_ENABLED,
                    IDM_RESTART, "&Restart Session");
     }
+}
+
+static void restart_session(void* ignored_context)
+{
+    close_session(ignored_context);
+    PostMessage(hwnd, WM_COMMAND, IDM_RESTART, 0);
 }
 
 int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
@@ -1198,9 +1224,20 @@ static void wintw_set_raw_mouse_mode(TermWin *tw, bool activate)
  */
 static void win_seat_connection_fatal(Seat *seat, const char *msg)
 {
-    char *title = dupprintf("%s Fatal Error", appname);
-    MessageBox(hwnd, msg, title, MB_ICONERROR | MB_OK);
-    sfree(title);
+    int secs = conf_get_int(conf, CONF_restart_interval);
+    if (secs != 0) {
+      char *title = dupprintf("%s Fatal Error (will restart in %d secs)", appname, secs);
+      int s = MessageBoxTimeoutA(hwnd, msg, title, MB_ICONERROR | MB_OKCANCEL, 0, secs * 1000 );
+      sfree(title);
+      if (s != IDCANCEL) {
+          queue_toplevel_callback(restart_session, NULL);
+          return;
+      }
+    } else {
+      char *title = dupprintf("%s Fatal Error", appname);
+      MessageBox(hwnd, msg, title, MB_ICONERROR | MB_OK);
+      sfree(title);
+    }
 
     if (conf_get_int(conf, CONF_close_on_exit) == FORCE_ON)
         PostQuitMessage(1);
@@ -5422,11 +5459,22 @@ void modalfatalbox(const char *fmt, ...)
     va_start(ap, fmt);
     message = dupvprintf(fmt, ap);
     va_end(ap);
+    int secs = conf_get_int(conf, CONF_restart_interval);
+    if (secs != 0) {
+      char *title = dupprintf("%s Fatal Error (will restart in %d secs)", appname, secs);
+      int s = MessageBoxTimeoutA(hwnd, message, title, MB_SYSTEMMODAL | MB_ICONERROR | MB_OKCANCEL, 0, secs * 1000 );
+      sfree(message);
+      sfree(title);
+      if (s != IDCANCEL) {
+          queue_toplevel_callback(restart_session, NULL);
+      }
+    } else {
     title = dupprintf("%s Fatal Error", appname);
     MessageBox(hwnd, message, title, MB_SYSTEMMODAL | MB_ICONERROR | MB_OK);
     sfree(message);
     sfree(title);
     cleanup_exit(1);
+    }
 }
 
 /*

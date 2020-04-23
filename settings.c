@@ -564,6 +564,8 @@ void save_open_settings(settings_w *sesskey, Conf *conf)
     write_setting_b(sesskey, "WarnOnClose", !!conf_get_bool(conf, CONF_warn_on_close));
     write_setting_i(sesskey, "PingInterval", conf_get_int(conf, CONF_ping_interval) / 60);      /* minutes */
     write_setting_i(sesskey, "PingIntervalSecs", conf_get_int(conf, CONF_ping_interval) % 60);  /* seconds */
+    write_setting_b(sesskey, "CachePass", conf_get_bool(conf, CONF_cache_pass));
+    write_setting_i(sesskey, "RestartIntervalSecs", conf_get_int(conf, CONF_restart_interval));  /* seconds */
     write_setting_b(sesskey, "TCPNoDelay", conf_get_bool(conf, CONF_tcp_nodelay));
     write_setting_b(sesskey, "TCPKeepalives", conf_get_bool(conf, CONF_tcp_keepalives));
     write_setting_s(sesskey, "TerminalType", conf_get_str(conf, CONF_termtype));
@@ -845,6 +847,8 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
         pingsec = gppi_raw(sesskey, "PingIntervalSecs", 0);
         conf_set_int(conf, CONF_ping_interval, pingmin * 60 + pingsec);
     }
+    gppb(sesskey, "CachePass", false, conf, CONF_cache_pass);
+    gppi(sesskey, "RestartIntervalSecs", 0, conf, CONF_restart_interval);
     gppb(sesskey, "TCPNoDelay", true, conf, CONF_tcp_nodelay);
     gppb(sesskey, "TCPKeepalives", false, conf, CONF_tcp_keepalives);
     gpps(sesskey, "TerminalType", "xterm", conf, CONF_termtype);

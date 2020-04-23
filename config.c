@@ -2117,6 +2117,19 @@ void setup_config_box(struct controlbox *b, bool midsession,
                      conf_editbox_handler, I(CONF_ping_interval),
                      I(-1));
 
+        s = ctrl_getset(b, "Connection", "cachepass", NULL);
+        ctrl_checkbox(s, "Temporary cache the password for auto-login", 'l',
+                          HELPCTX(connection_cache_pass),
+                          conf_checkbox_handler,
+                          I(CONF_cache_pass));
+
+        s = ctrl_getset(b, "Connection", "autorestart",
+                        "Auto restart the disconnected session");
+        ctrl_editbox(s, "Seconds to restart the session (0 to turn off)", 'r', 20,
+                     HELPCTX(connection_auto_restart),
+                     conf_editbox_handler, I(CONF_restart_interval),
+                     I(-1));
+
         if (!midsession) {
             s = ctrl_getset(b, "Connection", "tcp",
                             "Low-level TCP connection options");

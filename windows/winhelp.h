@@ -75,6 +75,8 @@
 #define WINHELP_CTX_connection_username "config-username"
 #define WINHELP_CTX_connection_username_from_env "config-username-from-env"
 #define WINHELP_CTX_connection_keepalive "config-keepalive"
+#define WINHELP_CTX_connection_cache_pass "config-cache-pass"
+#define WINHELP_CTX_connection_auto_restart "config-auto-restart"
 #define WINHELP_CTX_connection_nodelay "config-nodelay"
 #define WINHELP_CTX_connection_ipversion "config-address-family"
 #define WINHELP_CTX_connection_tcpkeepalive "config-tcp-keepalives"

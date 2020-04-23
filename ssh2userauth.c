@@ -61,6 +61,7 @@ struct ssh2_userauth_state {
     const char *username;
     char *locally_allocated_username;
     char *password;
+    char* cached_pass;
     bool got_username;
     strbuf *publickey_blob;
     bool privatekey_available, privatekey_encrypted;
@@ -239,6 +240,7 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
     struct ssh2_userauth_state *s =
         container_of(ppl, struct ssh2_userauth_state, ppl);
     PktIn *pktin;
+    bool cachepass = conf_get_bool(conf, CONF_cache_pass);
 
     ssh2_userauth_filter_queue(s);     /* no matter why we were called */
 
@@ -890,6 +892,10 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                         passphrase = NULL; /* no passphrase needed */
                     }
 
+		    if (cachepass && passphrase) {
+		      s->cached_pass = dupstr(passphrase);
+		    }
+
                     /*
                      * Try decrypting the key.
                      */
@@ -1460,6 +1466,10 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                 s->password = dupstr(s->cur_prompt->prompts[0]->result);
                 free_prompts(s->cur_prompt);
 
+		if (cachepass) {
+            s->cached_pass = dupstr(s->password);
+		}
+
                 /*
                  * Send the password packet.
                  *
@@ -1616,6 +1626,9 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                     put_stringz(s->pktout, s->password);
                     put_stringz(s->pktout,
                                        s->cur_prompt->prompts[1]->result);
+		    if (cachepass) {
+                s->cached_pass = dupstr(s->cur_prompt->prompts[1]->result);
+		    }
                     free_prompts(s->cur_prompt);
                     s->pktout->minlen = 256;
                     pq_push(s->ppl.out_pq, s->pktout);
@@ -1661,6 +1674,7 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                 ssh_sw_abort(s->ppl.ssh, "No supported authentication methods "
                              "available (server sent: %s)",
                              s->last_methods_string->s);
+
                 return;
             }
 
@@ -1675,6 +1689,10 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
      * doing an immediate rekey, if it has any reason to want to.
      */
     ssh2_transport_notify_auth_done(s->transport_layer);
+
+  if (cachepass) {
+    cache_host_name_pass(s->hostname, s->username, &(s->cached_pass));
+  }
 
     /*
      * Finally, hand over to our successor layer, and return

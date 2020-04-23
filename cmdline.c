@@ -53,6 +53,22 @@ static void cmdline_save_param(const char *p, const char *value, int pri)
 }
 
 static char *cmdline_password = NULL;
+static char *cached_name_host = NULL;
+
+void cache_host_name_pass(const char *hostname, const char *username, char **ptr_pass)
+{
+  if(cmdline_password == NULL) {
+    if (cached_name_host) {
+      sfree(cached_name_host);
+    }
+    cached_name_host = dupprintf("%s@%s", username, hostname);
+    cmdline_password = *ptr_pass;
+  }
+  else {
+      sfree(*ptr_pass);
+  }
+  *ptr_pass = NULL;
+}
 
 void cmdline_cleanup(void)
 {
@@ -84,6 +100,24 @@ void cmdline_cleanup(void)
 int cmdline_get_passwd_input(prompts_t *p)
 {
     static bool tried_once = false;
+
+    if(cached_name_host) {
+      int n = strlen(cached_name_host);
+      bool f = false;
+      for ( int i = 0; i < p->n_prompts; i++ ) {
+        if (!p->prompts[i]->echo && strncmp(p->prompts[i]->prompt, cached_name_host, n) == 0 ) {
+	  f = true;
+	  break;
+        }
+      }
+      if (!f) {
+        smemclr(cmdline_password, strlen(cmdline_password));
+        sfree(cmdline_password);
+        cmdline_password = NULL;
+      }
+      sfree(cached_name_host);
+      cached_name_host = NULL;
+    }
 
     /*
      * We only handle prompts which don't echo (which we assume to be
