@@ -100,17 +100,17 @@ void cmdline_cleanup(void)
 int cmdline_get_passwd_input(prompts_t *p)
 {
     static bool tried_once = false;
+    bool use_cached = false;
 
     if(cached_name_host) {
       int n = strlen(cached_name_host);
-      bool f = false;
       for ( int i = 0; i < p->n_prompts; i++ ) {
         if (!p->prompts[i]->echo && strncmp(p->prompts[i]->prompt, cached_name_host, n) == 0 ) {
-	  f = true;
-	  break;
+            use_cached = true;
+            break;
         }
       }
-      if (!f) {
+      if (!use_cached) {
         smemclr(cmdline_password, strlen(cmdline_password));
         sfree(cmdline_password);
         cmdline_password = NULL;
@@ -139,7 +139,10 @@ int cmdline_get_passwd_input(prompts_t *p)
     smemclr(cmdline_password, strlen(cmdline_password));
     sfree(cmdline_password);
     cmdline_password = NULL;
-    tried_once = true;
+    if (!use_cached) {
+      // for the real cmdline_password 
+      tried_once = true;
+    }
     return 1;
 }
 
