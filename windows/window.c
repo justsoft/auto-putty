@@ -298,6 +298,7 @@ static HICON trust_icon = INVALID_HANDLE_VALUE;
 const bool share_can_be_downstream = true;
 const bool share_can_be_upstream = true;
 
+#pragma comment(lib,"crypt32.lib")
 char* encdupstr(const char* prompt, const char* s)
 {
     DATA_BLOB idb, odb, kdb;
