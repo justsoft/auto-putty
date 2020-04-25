@@ -1262,7 +1262,7 @@ static void win_seat_connection_fatal(Seat *seat, const char *msg)
 {
     int secs = conf_get_int(conf, CONF_restart_interval);
     if (secs != 0) {
-      char *title = dupprintf("%s Fatal Error (will restart in %d secs)", appname, secs);
+      char *title = dupprintf("%s Fatal Error (restart in %d secs)", appname, secs);
       int s = MessageBoxTimeoutA(hwnd, msg, title, MB_ICONERROR | MB_OKCANCEL, 0, secs * 1000 );
       sfree(title);
       if (s != IDCANCEL) {
@@ -5497,7 +5497,7 @@ void modalfatalbox(const char *fmt, ...)
     va_end(ap);
     int secs = conf_get_int(conf, CONF_restart_interval);
     if (secs != 0) {
-      char *title = dupprintf("%s Fatal Error (will restart in %d secs)", appname, secs);
+      char *title = dupprintf("%s Fatal Error (restart in %d secs)", appname, secs);
       int s = MessageBoxTimeoutA(hwnd, message, title, MB_SYSTEMMODAL | MB_ICONERROR | MB_OKCANCEL, 0, secs * 1000 );
       sfree(message);
       sfree(title);
