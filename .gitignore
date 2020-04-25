@@ -1,3 +1,5 @@
+*.un~
+*.filters
 *.o
 *.pyc
 .dirstamp
@@ -74,7 +76,6 @@
 /uxconfig.in
 /uxconfig.in~
 /uxconfig.h
-/licence.h
 /*.a
 /charset/sbcsdat.c
 /contrib/cygtermd/cygtermd.exe
@@ -138,7 +139,6 @@
 /windows/MSVC
 /windows/DEVCPP
 /windows/VS2010
-/windows/VS2012
 /windows/*.log
 /windows/*.GID
 /windows/local
