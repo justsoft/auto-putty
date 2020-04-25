@@ -298,6 +298,41 @@ static HICON trust_icon = INVALID_HANDLE_VALUE;
 const bool share_can_be_downstream = true;
 const bool share_can_be_upstream = true;
 
+char* encdupstr(const char* prompt, const char* s)
+{
+    DATA_BLOB idb, odb, kdb;
+    char* ret = NULL;
+    idb.cbData = strlen(s)+1;
+    idb.pbData = s;
+
+    kdb.cbData = strlen(prompt);
+    kdb.pbData = prompt;
+    if (CryptProtectData(&idb, NULL, &kdb, NULL, NULL, CRYPTPROTECT_VERIFY_PROTECTION, &odb)) {
+        ret = smalloc(sizeof(DWORD) + odb.cbData);
+        memcpy(ret, &(odb.cbData), sizeof(DWORD));
+        memcpy(ret + sizeof(DWORD), odb.pbData, odb.cbData);
+        LocalFree(odb.pbData);
+    }
+    return ret;
+}
+
+char* decdupstr(const char* prompt, const char* s)
+{
+    DATA_BLOB idb, odb, kdb;
+    char* ret = NULL;
+    idb.cbData = *((DWORD*)s);
+    idb.pbData = s + sizeof(DWORD);
+
+    kdb.cbData = strlen(prompt);
+    kdb.pbData = prompt;
+    if (CryptUnprotectData(&idb, NULL, &kdb, NULL, NULL, 0, &odb)) {
+        ret = smalloc(odb.cbData);
+        memcpy(ret, odb.pbData, odb.cbData);
+        LocalFree(odb.pbData);
+    }
+    return ret;
+}
+
 typedef int (__stdcall *fpMessageBoxTimeout_t)(IN HWND hWnd, 
         IN LPCSTR lpText, IN LPCSTR lpCaption, 
         IN UINT uType, IN WORD wLanguageId, IN DWORD dwMilliseconds);

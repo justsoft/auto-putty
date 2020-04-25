@@ -887,14 +887,13 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                         }
                         passphrase =
                             dupstr(s->cur_prompt->prompts[0]->result);
+                        if (cachepass && passphrase) {
+                            s->cached_pass = encdupstr(s->cur_prompt->prompts[0]->prompt, passphrase);
+                        }
                         free_prompts(s->cur_prompt);
                     } else {
                         passphrase = NULL; /* no passphrase needed */
                     }
-
-		    if (cachepass && passphrase) {
-		      s->cached_pass = dupstr(passphrase);
-		    }
 
                     /*
                      * Try decrypting the key.
@@ -1464,11 +1463,10 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                  * asked to change it.)
                  */
                 s->password = dupstr(s->cur_prompt->prompts[0]->result);
+                if (cachepass) {
+                    s->cached_pass = encdupstr(s->cur_prompt->prompts[0]->prompt, s->password);
+                }
                 free_prompts(s->cur_prompt);
-
-		if (cachepass) {
-            s->cached_pass = dupstr(s->password);
-		}
 
                 /*
                  * Send the password packet.
@@ -1626,9 +1624,9 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                     put_stringz(s->pktout, s->password);
                     put_stringz(s->pktout,
                                        s->cur_prompt->prompts[1]->result);
-		    if (cachepass) {
-                s->cached_pass = dupstr(s->cur_prompt->prompts[1]->result);
-		    }
+                    if (cachepass) {
+                        s->cached_pass = encdupstr(s->cur_prompt->prompts[1]->prompt, s->cur_prompt->prompts[1]->result);
+                    }
                     free_prompts(s->cur_prompt);
                     s->pktout->minlen = 256;
                     pq_push(s->ppl.out_pq, s->pktout);
@@ -1691,7 +1689,7 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
     ssh2_transport_notify_auth_done(s->transport_layer);
 
   if (cachepass) {
-    cache_host_name_pass(s->hostname, s->username, &(s->cached_pass));
+    cache_pass(&(s->cached_pass));
   }
 
     /*

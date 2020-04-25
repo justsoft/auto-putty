@@ -53,20 +53,14 @@ static void cmdline_save_param(const char *p, const char *value, int pri)
 }
 
 static char *cmdline_password = NULL;
-static char *cached_name_host = NULL;
+static char *cached_encpasswd = NULL;
 
-void cache_host_name_pass(const char *hostname, const char *username, char **ptr_pass)
+void cache_pass(char **ptr_pass)
 {
-  if(cmdline_password == NULL) {
-    if (cached_name_host) {
-      sfree(cached_name_host);
+    if (cached_encpasswd) {
+        sfree(cached_encpasswd);
     }
-    cached_name_host = dupprintf("%s@%s", username, hostname);
-    cmdline_password = *ptr_pass;
-  }
-  else {
-      sfree(*ptr_pass);
-  }
+    cached_encpasswd = *ptr_pass;
   *ptr_pass = NULL;
 }
 
@@ -100,23 +94,17 @@ void cmdline_cleanup(void)
 int cmdline_get_passwd_input(prompts_t *p)
 {
     static bool tried_once = false;
-    bool use_cached = false;
 
-    if(cached_name_host) {
-      int n = strlen(cached_name_host);
-      for ( int i = 0; i < p->n_prompts; i++ ) {
-        if (!p->prompts[i]->echo && strncmp(p->prompts[i]->prompt, cached_name_host, n) == 0 ) {
-            use_cached = true;
-            break;
+    if (cached_encpasswd && !p->prompts[0]->echo) {
+        char* pw = decdupstr(p->prompts[0]->prompt, cached_encpasswd);
+        if (pw) {
+            sfree(cached_encpasswd);
+            cached_encpasswd = NULL;
+            prompt_set_result(p->prompts[0], pw);
+            smemclr(pw, strlen(pw));
+            sfree(pw);
+            return 1;
         }
-      }
-      if (!use_cached) {
-        smemclr(cmdline_password, strlen(cmdline_password));
-        sfree(cmdline_password);
-        cmdline_password = NULL;
-      }
-      sfree(cached_name_host);
-      cached_name_host = NULL;
     }
 
     /*
@@ -139,10 +127,7 @@ int cmdline_get_passwd_input(prompts_t *p)
     smemclr(cmdline_password, strlen(cmdline_password));
     sfree(cmdline_password);
     cmdline_password = NULL;
-    if (!use_cached) {
-      // for the real cmdline_password 
-      tried_once = true;
-    }
+    tried_once = true;
     return 1;
 }
 

@@ -2195,6 +2195,9 @@ typedef void (*toplevel_callback_notify_fn_t)(void *ctx);
 void request_callback_notifications(toplevel_callback_notify_fn_t notify,
                                     void *ctx);
 
+char* encdupstr(const char* prompt, const char* s);
+char* decdupstr(const char* prompt, const char* s);
+
 /*
  * Define no-op macros for the jump list functions, on platforms that
  * don't support them. (This is a bit of a hack, and it'd be nicer to
