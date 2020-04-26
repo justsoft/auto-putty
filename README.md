@@ -1,6 +1,6 @@
 ### Added following features for PuTTY for Windows
 - Auto restarts the session if connection dropped
-- Cache the lastest valid password in memory (beware the potential security risk)
+- Encrypts the lastest valid password in RAM for auto-login before process exit (beware there is still a little chance to decrypt the cached password from RAM or crash dump on the same Windows system)
 
 #### Session auto-restart from disconnected session setting
 ![Session auto-restart setting](https://raw.githubusercontent.com/justsoft/auto-putty/master/auto-restart.png)
